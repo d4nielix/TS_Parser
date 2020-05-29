@@ -7,25 +7,116 @@ using namespace std;
 // xTS_PacketHeader
 //=============================================================================================================================================================================
 void xTS_PacketHeader::Reset(){
-    syncByte = 0;
-    transportErrorIndicator = false;
-    payloadUnitStartIndicator = false;
-    transportPriority = false;
-    packetIdentifier = 0;
-    transportScramblingControl = 0;
-    adaptationFieldControl = 0;
-    continuityCounter = 0;
+    set_syncByte(0);
+    set_transportErrorIndicator(false);
+    set_payloadUnitStartIndicator(false);
+    set_transportPriority(false);
+    set_packetIdentifier(0);
+    set_transportScramblingControl(0);
+    set_adaptationFieldControl(0);
+    set_continuityCounter(0);
 }
 
 int32_t xTS_PacketHeader::Parse(const uint8_t* Input){
-    set_syncByte(Input[0]);
+
+    uint32_t newInput = Input[0] | (Input[1] << 8) | (Input[2] << 16) | (Input[3] << 24);
+    uint32_t mainmask = 0x00000080;
+    uint16_t localmask = 0x0080;
+
+    uint8_t SB = get_syncByte();
+    bool E = false;
+    bool S = false;
+    bool T = false;
+    uint16_t PID = get_packetIdentifier();
+    uint8_t TSC = get_transportScramblingControl();
+    uint8_t AFC = get_adaptationFieldControl();
+    uint8_t CC = get_continuityCounter();
+
+    for(int i=0; i<8; i++){
+        if((newInput&mainmask) > 0){
+            SB = SB | localmask;
+        }
+        mainmask = mainmask >> 1;
+        localmask = localmask >> 1;
+    }
+
+    mainmask = 0x00008000;
+    if((newInput & mainmask) > 0){
+        E = true;
+    }
+    mainmask = mainmask >> 1;
+    if((newInput & mainmask) > 0){
+        S = true;
+    }
+    mainmask = mainmask >> 1;
+    if((newInput & mainmask) > 0){
+        T = true;
+    }
+    mainmask = mainmask >> 1;
+
+    localmask = 0x1000;
+    for(int i=0; i<5; i++){
+        if((newInput & mainmask) > 0){
+            PID = PID | localmask;
+        }
+        mainmask = mainmask >> 1;
+        localmask = localmask >> 1;
+    }
+
+    mainmask = 0x00800000;
+    for(int i=0; i<8; i++){
+        if((newInput & mainmask) > 0){
+            PID = PID | localmask;
+        }
+        mainmask = mainmask >> 1;
+        localmask = localmask >> 1;
+    }
+
+    localmask = 0x0002;
+    mainmask = 0x80000000;
+
+    for(int i=0; i<2; i++){
+        if((newInput & mainmask) > 0){
+            TSC = TSC | localmask;
+        }
+        mainmask = mainmask >> 1;
+        localmask = localmask >> 1;
+    }
+
+    localmask = 0x0002;
+
+    for(int i=0; i<2; i++){
+        if((newInput & mainmask) > 0){
+            AFC = AFC | localmask;
+        }
+        mainmask = mainmask >> 1;
+        localmask = localmask >> 1;
+    }
+
+    localmask = 0x0008;
+
+    for(int i=0; i<4; i++){
+        if((newInput & mainmask) > 0){
+            CC = CC | localmask;
+        }
+        mainmask = mainmask >> 1;
+        localmask = localmask >> 1;
+    }
+
+    set_syncByte(SB);
+    set_transportErrorIndicator(E);
+    set_payloadUnitStartIndicator(S);
+    set_transportPriority(T);
+    set_packetIdentifier(PID);
+    set_transportScramblingControl(TSC);
+    set_adaptationFieldControl(AFC);
+    set_continuityCounter(CC);
+
+
+    /*set_syncByte(Input[0]);
     set_transportErrorIndicator((Input[1] & 128)? 1:0);
     set_payloadUnitStartIndicator((Input[1] & 64)? 1:0);
     set_transportPriority((Input[1] & 32)? 1:0);
-    /*set_packetIdentifier(Input[1]&16 ? 4096:0 + Input[1]&8 ? 2048:0 + Input[1]&4 ? 1024:0 + Input[1]&2 ? 512:0 + Input[1]&1 ? 256:0 + Input[2]&128 ? 128:0 + Input[2]&64 ? 64:0 + Input[2]&32 ? 32:0 + Input[2]&16 ? 16:0 + Input[2]&8 ? 8:0 + Input[2]&4 ? 4:0 + Input[2]&2 ? 2:0 + Input[2]&1 ? 1:0);
-    set_transportScramblingControl(Input[3]&128 ? 2:0 + Input[3]&64 ? 1:0);
-    set_adaptationFieldControl(Input[3]&32 ? 2:0 + Input[3]&16 ? 1:0);
-    set_continuityCounter(Input[3]&8 ? 8:0 + Input[3]&4 ? 4:0 + Input[3]&2 ? 2:0 + Input[3]&1 ? 1:0);*/
 
     uint16_t PID = Input[1]%32;
     PID <<= 8;
@@ -41,7 +132,7 @@ int32_t xTS_PacketHeader::Parse(const uint8_t* Input){
     set_adaptationFieldControl(AFC);
 
     uint8_t CC = Input[3]%16;
-    set_continuityCounter(CC);
+    set_continuityCounter(CC);*/
 
     return 1;
 }

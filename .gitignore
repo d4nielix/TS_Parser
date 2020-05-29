@@ -2,3 +2,6 @@
 /cmake-build-debug/
 example_new.ts
 ffmpeg.zip
+ffmpeg.exe
+ffplay.exe
+ffprobe.exe
