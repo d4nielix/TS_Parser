@@ -80,7 +80,8 @@ protected:
 
 public:
     void     Reset();
-    int32_t  Parse(const uint8_t* Input);
+    int32_t  Parse(uint8_t* Input);
+    int32_t  Parse2(uint8_t* Input);
     void     Print() const;
     bool hasAdaptationField() const;
     bool hasPayload() const;
@@ -105,3 +106,43 @@ public:
 };
 
 //=============================================================================================================================================================================
+
+class xTS_AdaptationField
+{
+protected:
+    uint8_t adaptationFieldLength;
+    bool discontinuityIndicator;
+    bool randomAccessIndicator;
+    bool elementaryStreamPriorityIndicator;
+    bool programClockReferenceFlag;
+    bool originalProgramClockReferenceFlag;
+    bool splicingPointFlag;
+    bool transportPrivateDataFlag;
+    bool adaptationFieldExtensionFlag;
+
+public:
+    void Reset();
+    int32_t Parse(const uint8_t* Input, uint8_t AdaptationFieldControl);
+    void Print() const;
+    uint32_t getNumBytes() const;
+
+    const uint8_t &get_adaptationFieldLength() const;
+    const bool &get_discontinuityIndicator() const;
+    const bool &get_randomAccessIndicator() const;
+    const bool &get_elementaryStreamPriorityIndicator() const;
+    const bool &get_programClockReferenceFlag() const;
+    const bool &get_originalProgramClockReferenceFlag() const;
+    const bool &get_splicingPointFlag() const;
+    const bool &get_transportPrivateDataFlag() const;
+    const bool &get_adaptationFieldExtensionFlag() const;
+
+    void set_adaptationFieldLength(const uint8_t &temp);
+    void set_discontinuityIndicator(const bool &temp);
+    void set_randomAccessIndicator(const bool &temp);
+    void set_elementaryStreamPriorityIndicator(const bool &temp);
+    void set_programClockReferenceFlag(const bool &temp);
+    void set_originalProgramClockReferenceFlag(const bool &temp);
+    void set_splicingPointFlag(const bool &temp);
+    void set_transportPrivateDataFlag(const bool &temp);
+    void set_adaptationFieldExtensionFlag(const bool &temp);
+};

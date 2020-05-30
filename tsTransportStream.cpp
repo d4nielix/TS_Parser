@@ -17,7 +17,7 @@ void xTS_PacketHeader::Reset(){
     set_continuityCounter(0);
 }
 
-int32_t xTS_PacketHeader::Parse(const uint8_t* Input){
+int32_t xTS_PacketHeader::Parse(uint8_t* Input){
 
     uint32_t newInput = Input[0] | (Input[1] << 8) | (Input[2] << 16) | (Input[3] << 24);
     uint32_t mainmask = 0x00000080;
@@ -112,11 +112,15 @@ int32_t xTS_PacketHeader::Parse(const uint8_t* Input){
     set_adaptationFieldControl(AFC);
     set_continuityCounter(CC);
 
+    return 1;
+}
 
-    /*set_syncByte(Input[0]);
-    set_transportErrorIndicator((Input[1] & 128)? 1:0);
-    set_payloadUnitStartIndicator((Input[1] & 64)? 1:0);
-    set_transportPriority((Input[1] & 32)? 1:0);
+int32_t xTS_PacketHeader::Parse2(uint8_t* Input){
+
+    set_syncByte(Input[0]);
+    set_transportErrorIndicator((Input[1] & 128) != 0);
+    set_payloadUnitStartIndicator((Input[1] & 64) != 0);
+    set_transportPriority((Input[1] & 32) != 0);
 
     uint16_t PID = Input[1]%32;
     PID <<= 8;
@@ -132,7 +136,7 @@ int32_t xTS_PacketHeader::Parse(const uint8_t* Input){
     set_adaptationFieldControl(AFC);
 
     uint8_t CC = Input[3]%16;
-    set_continuityCounter(CC);*/
+    set_continuityCounter(CC);
 
     return 1;
 }
@@ -150,11 +154,12 @@ void xTS_PacketHeader::Print() const{
 }
 
 bool xTS_PacketHeader::hasAdaptationField() const {
-    return false;
+    uint8_t AFC = get_adaptationFieldControl();
+    return AFC == 2 || AFC == 3;
 }
 
 bool xTS_PacketHeader::hasPayload() const {
-    return false;
+    return get_adaptationFieldControl() == 3;
 }
 
 //GETTERS
@@ -185,27 +190,130 @@ const uint8_t &xTS_PacketHeader::get_continuityCounter() const{
 
 //SETTERS
 void xTS_PacketHeader::set_syncByte(const uint8_t &temp){
-    xTS_PacketHeader::syncByte = temp;
+    syncByte = temp;
 }
 void xTS_PacketHeader::set_transportErrorIndicator(const bool &temp){
-    xTS_PacketHeader::transportErrorIndicator = temp;
+    transportErrorIndicator = temp;
 }
 void xTS_PacketHeader::set_payloadUnitStartIndicator(const bool &temp){
-    xTS_PacketHeader::payloadUnitStartIndicator = temp;
+    payloadUnitStartIndicator = temp;
 }
 void xTS_PacketHeader::set_transportPriority(const bool &temp){
-    xTS_PacketHeader::transportPriority = temp;
+    transportPriority = temp;
 }
 void xTS_PacketHeader::set_packetIdentifier(const uint16_t &temp){
-    xTS_PacketHeader::packetIdentifier = temp;
+    packetIdentifier = temp;
 }
 void xTS_PacketHeader::set_transportScramblingControl(const uint8_t &temp){
-    xTS_PacketHeader::transportScramblingControl = temp;
+    transportScramblingControl = temp;
 }
 void xTS_PacketHeader::set_adaptationFieldControl(const uint8_t &temp){
-    xTS_PacketHeader::adaptationFieldControl = temp;
+    adaptationFieldControl = temp;
 }
 void xTS_PacketHeader::set_continuityCounter(const uint8_t &temp){
-    xTS_PacketHeader::continuityCounter = temp;
+    continuityCounter = temp;
 }
+
 //=============================================================================================================================================================================
+// xTS_AdaptationField
+//=============================================================================================================================================================================
+void xTS_AdaptationField::Reset() {
+    set_adaptationFieldLength(0);
+    set_discontinuityIndicator(false);
+    set_randomAccessIndicator(false);
+    set_elementaryStreamPriorityIndicator(false);
+    set_programClockReferenceFlag(false);
+    set_originalProgramClockReferenceFlag(false);
+    set_splicingPointFlag(false);
+    set_transportPrivateDataFlag(false);
+    set_adaptationFieldExtensionFlag(false);
+}
+
+int32_t xTS_AdaptationField::Parse(const uint8_t *Input, uint8_t AdaptationFieldControl) {
+    set_adaptationFieldLength(Input[4]);
+    set_discontinuityIndicator((Input[5] & 128) != 0);
+    set_randomAccessIndicator((Input[5] & 64) != 0);
+    set_elementaryStreamPriorityIndicator((Input[5] & 32) != 0);
+    set_programClockReferenceFlag((Input[5] & 16) != 0);
+    set_originalProgramClockReferenceFlag((Input[5] & 8) != 0);
+    set_splicingPointFlag((Input[5] & 4) != 0);
+    set_transportPrivateDataFlag((Input[5] & 2) != 0);
+    set_adaptationFieldExtensionFlag((Input[5] & 1) != 0);
+
+    return 1;
+}
+
+void xTS_AdaptationField::Print() const {
+    printf(" AF: L=%d DC=%d RA=%d ESP=%d PR=%d OR=%d SP=%d TP=%d EX=%d",
+            get_adaptationFieldLength(),
+            get_discontinuityIndicator(),
+            get_randomAccessIndicator(),
+            get_elementaryStreamPriorityIndicator(),
+            get_programClockReferenceFlag(),
+            get_originalProgramClockReferenceFlag(),
+            get_splicingPointFlag(),
+            get_transportPrivateDataFlag(),
+            get_adaptationFieldExtensionFlag());
+}
+
+uint32_t xTS_AdaptationField::getNumBytes() const {
+    return 0;
+}
+
+//GETTERS
+const uint8_t &xTS_AdaptationField::get_adaptationFieldLength() const {
+    return adaptationFieldLength;
+}
+const bool &xTS_AdaptationField::get_discontinuityIndicator() const {
+    return discontinuityIndicator;
+}
+const bool &xTS_AdaptationField::get_randomAccessIndicator() const {
+    return randomAccessIndicator;
+}
+const bool &xTS_AdaptationField::get_elementaryStreamPriorityIndicator() const {
+    return elementaryStreamPriorityIndicator;
+}
+const bool &xTS_AdaptationField::get_programClockReferenceFlag() const {
+    return programClockReferenceFlag;
+}
+const bool &xTS_AdaptationField::get_originalProgramClockReferenceFlag() const {
+    return originalProgramClockReferenceFlag;
+}
+const bool &xTS_AdaptationField::get_splicingPointFlag() const {
+    return splicingPointFlag;
+}
+const bool &xTS_AdaptationField::get_transportPrivateDataFlag() const {
+    return transportPrivateDataFlag;
+}
+const bool &xTS_AdaptationField::get_adaptationFieldExtensionFlag() const {
+    return adaptationFieldExtensionFlag;
+}
+
+//SETTERS
+void xTS_AdaptationField::set_adaptationFieldLength(const uint8_t &temp) {
+    adaptationFieldLength = temp;
+}
+void xTS_AdaptationField::set_discontinuityIndicator(const bool &temp) {
+    discontinuityIndicator = temp;
+}
+void xTS_AdaptationField::set_randomAccessIndicator(const bool &temp) {
+    randomAccessIndicator = temp;
+}
+void xTS_AdaptationField::set_elementaryStreamPriorityIndicator(const bool &temp) {
+    elementaryStreamPriorityIndicator = temp;
+}
+void xTS_AdaptationField::set_programClockReferenceFlag(const bool &temp) {
+    programClockReferenceFlag = temp;
+}
+void xTS_AdaptationField::set_originalProgramClockReferenceFlag(const bool &temp) {
+    originalProgramClockReferenceFlag = temp;
+}
+void xTS_AdaptationField::set_splicingPointFlag(const bool &temp) {
+    splicingPointFlag = temp;
+}
+void xTS_AdaptationField::set_transportPrivateDataFlag(const bool &temp) {
+    transportPrivateDataFlag = temp;
+}
+void xTS_AdaptationField::set_adaptationFieldExtensionFlag(const bool &temp) {
+    adaptationFieldExtensionFlag = temp;
+}
