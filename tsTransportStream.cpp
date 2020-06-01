@@ -317,3 +317,133 @@ void xTS_AdaptationField::set_transportPrivateDataFlag(const bool &temp) {
 void xTS_AdaptationField::set_adaptationFieldExtensionFlag(const bool &temp) {
     adaptationFieldExtensionFlag = temp;
 }
+
+//=============================================================================================================================================================================
+// xPES_PacketHeader
+//=============================================================================================================================================================================
+void xPES_PacketHeader::Reset() {
+    set_PacketStartCodePrefix(0);
+    set_StreamId(0);
+    set_PacketLength(0);
+    set_PESScramblingControl(0);
+    set_PESPriority(false);
+    set_dataAlignmentIndicator(false);
+    set_copyright(false);
+    set_originalOrCopy(false);
+    set_PTSDTSFlags(0);
+    set_ESCRFlag(false);
+    set_ESRateFlag(false);
+    set_DSMTrickModeFlag(false);
+    set_additionalCopyInfoFlag(false);
+    set_PESCRCFlag(false);
+    set_PESExtensionFlag(false);
+    set_PESHeaderDataLength(0);
+}
+
+int32_t xPES_PacketHeader::Parse(const uint8_t *Input) {
+    return 1;
+}
+
+void xPES_PacketHeader::Print() const {
+    printf(" PES: PSCP=%d SID=%d PL=%d HL=%lu DL=%lu",
+            getPacketStartCodePrefix(),
+            getStreamId(),
+            getPacketLength(),
+            get_PESHeaderDataLength() + xTS::TS_HeaderLength + 3,
+            getPacketLength() - get_PESHeaderDataLength() - 3);
+}
+
+//GETTERS
+const uint8_t &xPES_PacketHeader::get_PESScramblingControl() const {
+    return PESScramblingControl;
+}
+const bool &xPES_PacketHeader::get_PESPriority() const {
+    return PESPriority;
+}
+const bool &xPES_PacketHeader::get_dataAlignmentIndicator() const {
+    return dataAlignmentIndicator;
+}
+const bool &xPES_PacketHeader::get_copyright() const {
+    return copyright;
+}
+const bool &xPES_PacketHeader::get_originalOrCopy() const {
+    return originalOrCopy;
+}
+const uint8_t &xPES_PacketHeader::get_PTSDTSFlags() const {
+    return PTSDTSFlags;
+}
+const bool &xPES_PacketHeader::get_ESCRFlag() const {
+    return ESCRFlag;
+}
+const bool &xPES_PacketHeader::get_ESRateFlag() const {
+    return ESRateFlag;
+}
+const bool &xPES_PacketHeader::get_DSMTrickModeFlag() const {
+    return DSMTrickModeFlag;
+}
+const bool &xPES_PacketHeader::get_additionalCopyInfoFlag() const {
+    return additionalCopyInfoFlag;
+}
+const bool &xPES_PacketHeader::get_PESCRCFlag() const {
+    return PESCRCFlag;
+}
+const bool &xPES_PacketHeader::get_PESExtensionFlag() const {
+    return PESExtensionFlag;
+}
+const uint8_t &xPES_PacketHeader::get_PESHeaderDataLength() const {
+    return PESHeaderDataLength;
+}
+
+//SETTERS
+void xPES_PacketHeader::set_PacketStartCodePrefix(const uint32_t &temp) {
+    m_PacketStartCodePrefix = temp;
+}
+void xPES_PacketHeader::set_StreamId(const uint8_t &temp) {
+    m_StreamId = temp;
+}
+void xPES_PacketHeader::set_PacketLength(const uint16_t &temp) {
+    m_PacketLength = temp;
+}
+void xPES_PacketHeader::set_PESScramblingControl(const uint8_t &temp) {
+    PESScramblingControl = temp;
+}
+void xPES_PacketHeader::set_PESPriority(const bool &temp) {
+    PESPriority = temp;
+}
+void xPES_PacketHeader::set_dataAlignmentIndicator(const bool &temp) {
+    dataAlignmentIndicator = temp;
+}
+void xPES_PacketHeader::set_copyright(const bool &temp) {
+    copyright = temp;
+}
+void xPES_PacketHeader::set_originalOrCopy(const bool &temp) {
+    originalOrCopy = temp;
+}
+void xPES_PacketHeader::set_PTSDTSFlags(const uint8_t &temp) {
+    PTSDTSFlags = temp;
+}
+void xPES_PacketHeader::set_ESCRFlag(const bool &temp) {
+    ESCRFlag = temp;
+}
+void xPES_PacketHeader::set_ESRateFlag(const bool &temp) {
+    ESRateFlag = temp;
+}
+void xPES_PacketHeader::set_DSMTrickModeFlag(const bool &temp) {
+    DSMTrickModeFlag = temp;
+}
+void xPES_PacketHeader::set_additionalCopyInfoFlag(const bool &temp) {
+    additionalCopyInfoFlag = temp;
+}
+void xPES_PacketHeader::set_PESCRCFlag(const bool &temp) {
+    PESCRCFlag = temp;
+}
+void xPES_PacketHeader::set_PESExtensionFlag(const bool &temp) {
+    PESExtensionFlag = temp;
+}
+void xPES_PacketHeader::set_PESHeaderDataLength(const uint8_t &temp) {
+    PESHeaderDataLength = temp;
+}
+
+//=============================================================================================================================================================================
+// xPES_Assembler
+//=============================================================================================================================================================================

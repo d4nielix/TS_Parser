@@ -165,21 +165,62 @@ public:
     };
 
 protected:
-    //PES packet header
     uint32_t m_PacketStartCodePrefix;
     uint8_t m_StreamId;
     uint16_t m_PacketLength;
+    uint8_t PESScramblingControl;
+    bool PESPriority;
+    bool dataAlignmentIndicator;
+    bool copyright;
+    bool originalOrCopy;
+    uint8_t PTSDTSFlags;
+    bool ESCRFlag;
+    bool ESRateFlag;
+    bool DSMTrickModeFlag;
+    bool additionalCopyInfoFlag;
+    bool PESCRCFlag;
+    bool PESExtensionFlag;
+    uint8_t PESHeaderDataLength;
 
 public:
     void Reset();
     int32_t Parse(const uint8_t* Input);
     void Print() const;
 
-public:
-    //PES packet header
     uint32_t getPacketStartCodePrefix() const { return m_PacketStartCodePrefix; }
     uint8_t getStreamId() const { return m_StreamId; }
     uint16_t getPacketLength() const { return m_PacketLength; }
+
+    const uint8_t &get_PESScramblingControl() const;
+    const bool &get_PESPriority() const;
+    const bool &get_dataAlignmentIndicator() const;
+    const bool &get_copyright() const;
+    const bool &get_originalOrCopy() const;
+    const uint8_t &get_PTSDTSFlags() const;
+    const bool &get_ESCRFlag() const;
+    const bool &get_ESRateFlag() const;
+    const bool &get_DSMTrickModeFlag() const;
+    const bool &get_additionalCopyInfoFlag() const;
+    const bool &get_PESCRCFlag() const;
+    const bool &get_PESExtensionFlag() const;
+    const uint8_t &get_PESHeaderDataLength() const;
+
+    void set_PacketStartCodePrefix(const uint32_t &temp);
+    void set_StreamId(const uint8_t &temp);
+    void set_PacketLength(const uint16_t &temp);
+    void set_PESScramblingControl(const uint8_t &temp);
+    void set_PESPriority(const bool &temp);
+    void set_dataAlignmentIndicator(const bool &temp);
+    void set_copyright(const bool &temp);
+    void set_originalOrCopy(const bool &temp);
+    void set_PTSDTSFlags(const uint8_t &temp);
+    void set_ESCRFlag(const bool &temp);
+    void set_ESRateFlag(const bool &temp);
+    void set_DSMTrickModeFlag(const bool &temp);
+    void set_additionalCopyInfoFlag(const bool &temp);
+    void set_PESCRCFlag(const bool &temp);
+    void set_PESExtensionFlag(const bool &temp);
+    void set_PESHeaderDataLength(const uint8_t &temp);
 };
 
 //=============================================================================================================================================================================
@@ -190,23 +231,21 @@ public:
     enum class eResult : int32_t
     {
         UnexpectedPID = 1,
-        StreamPacketLost,
-        AssemblingStarted,
-        AssemblingContinue,
-        AssemblingFinished,
+        StreamPacketLost = 2,
+        AssemblingStarted = 3,
+        AssemblingContinue = 4,
+        AssemblingFinished = 5,
     };
 
 protected:
-    //setup
     int32_t m_PID;
-    //buffer
     uint8_t* m_Buffer;
     uint32_t m_BufferSize;
     uint32_t m_DataOffset;
-    //operation
     int8_t m_LastContinuityCounter;
     bool m_Started;
     xPES_PacketHeader m_PESH;
+    uint8_t m_EndContinuityCounter;
 
 public:
     xPES_Assembler();
@@ -218,6 +257,8 @@ public:
     void PrintPESH() const { m_PESH.Print(); }
     uint8_t* getPacket() { return m_Buffer; }
     int32_t getNumPacketBytes() const { return m_DataOffset; }
+
+    void set_m_PID(int32_t mPID);
 
 protected:
     void xBufferReset();
