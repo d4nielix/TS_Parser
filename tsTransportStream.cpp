@@ -340,7 +340,7 @@ void xPES_PacketHeader::Reset() {
     set_PESHeaderDataLength(0);
 }
 
-int32_t xPES_PacketHeader::Parse(const uint8_t *Input) {
+int32_t xPES_PacketHeader::Parse(const string Input) {
     uint32_t PSCP = Input[0];
     PSCP <<= 8;
     PSCP |= Input[1];
@@ -508,7 +508,7 @@ void xPES_Assembler::xBufferReset() {
     m_Started = false;
     m_LastContinuityCounter = 0;
     m_EndContinuityCounter = 15;
-    m_Buffer = 0;
+    m_Buffer = "";
 }
 
 void xPES_Assembler::xBufferAppend(const uint8_t *Data, int32_t Size) {
