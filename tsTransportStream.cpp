@@ -256,8 +256,8 @@ void xTS_AdaptationField::Print() const {
             get_adaptationFieldExtensionFlag());
 }
 
-uint32_t xTS_AdaptationField::getNumBytes() const {
-    return 0;
+uint32_t xTS_AdaptationField::getNumBytes(size_t index) const {
+    return get_adaptationFieldLength() - index/8;
 }
 
 //GETTERS
@@ -340,7 +340,7 @@ void xPES_PacketHeader::Reset() {
     set_PESHeaderDataLength(0);
 }
 
-int32_t xPES_PacketHeader::Parse(const string Input) {
+int32_t xPES_PacketHeader::Parse(const uint8_t *Input) {
     uint32_t PSCP = Input[0];
     PSCP <<= 8;
     PSCP |= Input[1];
@@ -508,12 +508,34 @@ void xPES_Assembler::xBufferReset() {
     m_Started = false;
     m_LastContinuityCounter = 0;
     m_EndContinuityCounter = 15;
-    m_Buffer = "";
+    m_BufferSize = 0;
+    m_DataOffset = 0;
+    m_Buffer = 0;
+
+    m_PESH.Reset();
 }
 
 void xPES_Assembler::xBufferAppend(const uint8_t *Data, int32_t Size) {
-    for(int i=Size; i<xTS::TS_PacketLength; i++){
+    /*for(int i=Size; i<xTS::TS_PacketLength; i++){
         m_Buffer += Data[i];
+    }*/
+
+    m_BufferSize += Size;
+
+    if(!m_Started){
+        m_Buffer = new uint8_t[m_BufferSize];
+    }
+    else{
+        uint8_t* m_TempBuffer = new uint8_t[m_BufferSize];
+        for(uint32_t i=0; i < m_BufferSize - Size; i++){
+            m_TempBuffer[i] = m_Buffer[i];
+        }
+        delete[] m_Buffer;
+        m_Buffer = m_TempBuffer;
+    }
+
+    for(uint8_t i = 188 - Size; i<188; i++){
+        m_Buffer[m_DataOffset++] = Data[i];
     }
 }
 

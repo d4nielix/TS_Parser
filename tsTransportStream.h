@@ -124,7 +124,7 @@ public:
     void Reset();
     int32_t Parse(const uint8_t* Input, uint8_t AdaptationFieldControl);
     void Print() const;
-    uint32_t getNumBytes() const;
+    uint32_t getNumBytes(size_t index) const;
 
     const uint8_t &get_adaptationFieldLength() const;
     const bool &get_discontinuityIndicator() const;
@@ -184,7 +184,7 @@ protected:
 
 public:
     void Reset();
-    int32_t Parse(string Input);
+    int32_t Parse(const uint8_t* Input);
     void Print() const;
 
     uint32_t getPacketStartCodePrefix() const { return m_PacketStartCodePrefix; }
@@ -239,7 +239,7 @@ public:
 
 protected:
     int32_t m_PID;
-    string m_Buffer;
+    uint8_t* m_Buffer;
     uint32_t m_BufferSize;
     uint32_t m_DataOffset;
     int8_t m_LastContinuityCounter;
@@ -255,7 +255,7 @@ public:
     eResult AbsorbPacket(const uint8_t* TransportStreamPacket, const xTS_PacketHeader* PacketHeader, const xTS_AdaptationField* AdaptationField);
 
     void PrintPESH() const { m_PESH.Print(); }
-    string getPacket() { return m_Buffer; }
+    uint8_t* getPacket() { return m_Buffer; }
     int32_t getNumPacketBytes() const { return m_DataOffset; }
 
     void set_m_PID(int32_t mPID);
