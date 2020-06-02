@@ -341,6 +341,48 @@ void xPES_PacketHeader::Reset() {
 }
 
 int32_t xPES_PacketHeader::Parse(const uint8_t *Input) {
+    uint32_t PSCP = Input[0];
+    PSCP <<= 8;
+    PSCP |= Input[1];
+    PSCP <<=8;
+    PSCP |= Input[2];
+    set_PacketStartCodePrefix(PSCP);
+
+    set_StreamId(Input[3]);
+    uint8_t stream = getStreamId();
+
+    uint16_t PL = Input[4];
+    PL <<= 8;
+    PL |= Input[5];
+    set_PacketLength(PL);
+
+
+    if(stream != eStreamId::eStreamId_program_stream_map
+        && stream != eStreamId::eStreamId_padding_stream
+        && stream != eStreamId::eStreamId_private_stream_2
+        && stream != eStreamId::eStreamId_ECM
+        && stream != eStreamId::eStreamId_EMM
+        && stream != eStreamId::eStreamId_program_stream_directory
+        && stream != eStreamId::eStreamId_DSMCC_stream
+        && stream != eStreamId::eStreamId_ITUT_H222_1_type_E){
+
+        set_PESScramblingControl(Input[6]%32 ? 2:0 + Input[6]%16 ? 1:0);
+        set_PESPriority(Input[6] % 8 != 0);
+        set_dataAlignmentIndicator(Input[6] % 4 != 0);
+        set_copyright(Input[6] % 2 != 0);
+        set_originalOrCopy(Input[6] % 1 != 0);
+
+        set_PTSDTSFlags(Input[7]%128 ? 2:0 + Input[7]%64 ? 1:0);
+        set_ESCRFlag(Input[7] % 32 != 0);
+        set_ESRateFlag(Input[7] % 16 != 0);
+        set_DSMTrickModeFlag(Input[7] % 8 != 0);
+        set_additionalCopyInfoFlag(Input[7] % 4 != 0);
+        set_PESCRCFlag(Input[7] % 2 != 0);
+        set_PESExtensionFlag(Input[7] % 1 != 0);
+
+        set_PESHeaderDataLength(Input[8]);
+    }
+
     return 1;
 }
 
@@ -447,3 +489,76 @@ void xPES_PacketHeader::set_PESHeaderDataLength(const uint8_t &temp) {
 //=============================================================================================================================================================================
 // xPES_Assembler
 //=============================================================================================================================================================================
+xPES_Assembler::xPES_Assembler() {
+
+}
+xPES_Assembler::~xPES_Assembler() {
+
+}
+
+void xPES_Assembler::Init(int32_t PID) {
+    set_m_PID(PID);
+}
+
+void xPES_Assembler::set_m_PID(int32_t mPID) {
+    m_PID = mPID;
+}
+
+void xPES_Assembler::xBufferReset() {
+    m_Started = false;
+    m_LastContinuityCounter = 0;
+    m_EndContinuityCounter = 15;
+    m_Buffer = 0;
+}
+
+void xPES_Assembler::xBufferAppend(const uint8_t *Data, int32_t Size) {
+    for(int i=Size; i<xTS::TS_PacketLength; i++){
+        m_Buffer += Data[i];
+    }
+}
+
+xPES_Assembler::eResult xPES_Assembler::AbsorbPacket(const uint8_t *TransportStreamPacket, const xTS_PacketHeader *PacketHeader, const xTS_AdaptationField *AdaptationField) {
+    if(PacketHeader->get_packetIdentifier() == m_PID){
+        uint8_t cc = PacketHeader->get_continuityCounter();
+
+        if(PacketHeader->get_payloadUnitStartIndicator() == 1){
+            xBufferReset();
+            m_PESH.Reset();
+            m_Started = true;
+            m_LastContinuityCounter = cc;
+            m_EndContinuityCounter = (cc+15) % 16;
+            if(PacketHeader->hasPayload()){
+                xBufferAppend(TransportStreamPacket,
+                        xTS::TS_HeaderLength + AdaptationField->get_adaptationFieldLength() + 1);
+            }
+
+            return xPES_Assembler::eResult::AssemblingStarted;
+        }
+        else if(cc == m_EndContinuityCounter){
+            if(PacketHeader->hasPayload()){
+                xBufferAppend(TransportStreamPacket,
+                              xTS::TS_HeaderLength + AdaptationField->get_adaptationFieldLength() + 1);
+            }
+            m_PESH.Reset();
+            m_PESH.Parse(m_Buffer);
+            m_DataOffset = m_PESH.getPacketLength() + xTS::PES_HeaderLength;
+
+            return xPES_Assembler::eResult::AssemblingFinished;
+        }
+        else if(cc >= 0 && cc <= 15 && cc == (m_LastContinuityCounter + 1) % 16 && m_Started){
+            m_LastContinuityCounter++;
+            if(PacketHeader->hasPayload()){
+                xBufferAppend(TransportStreamPacket,
+                        xTS::TS_HeaderLength + AdaptationField->get_adaptationFieldLength() + 1);
+            }
+
+            return xPES_Assembler::eResult::AssemblingContinue;
+        } else {
+            xBufferReset();
+            return xPES_Assembler::eResult::StreamPacketLost;
+        }
+    }
+    else{
+        return xPES_Assembler::eResult::UnexpectedPID;
+    }
+}

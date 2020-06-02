@@ -20,8 +20,8 @@ int main( int argc, char *argv[ ], char *envp[ ]) {
 
     xTS_AdaptationField TS_AdaptationField;
 
-    //xPES_Assembler PES_Assembler;
-    //PES_Assembler.Init(136);
+    xPES_Assembler PES_Assembler;
+    PES_Assembler.Init(136);
 
     while (!feof(file)) {
         fread(buffer, xTS::TS_PacketLength, 1, file);
@@ -44,26 +44,26 @@ int main( int argc, char *argv[ ], char *envp[ ]) {
                 TS_AdaptationField.Print();
             }
 
-            /*xPES_Assembler::eResult Result = PES_Assembler.AbsorbPacket(TS_PacketBuffer, &TS_PacketHeader,
+            xPES_Assembler::eResult Result = PES_Assembler.AbsorbPacket(TS_PacketBuffer, &TS_PacketHeader,
                                                                         &TS_AdaptationField);
             switch (Result) {
                 case xPES_Assembler::eResult::StreamPacketLost:
-                    printf("PcktLost ");
+                    printf(" PcktLost ");
                     break;
                 case xPES_Assembler::eResult::AssemblingStarted:
-                    printf("Started ");
+                    printf(" Started ");
                     PES_Assembler.PrintPESH();
                     break;
                 case xPES_Assembler::eResult::AssemblingContinue:
-                    printf("Continue ");
+                    printf(" Continue ");
                     break;
                 case xPES_Assembler::eResult::AssemblingFinished:
-                    printf("Finished ");
-                    printf("PES: Len=%d", PES_Assembler.getNumPacketBytes());
+                    printf(" Finished ");
+                    printf(" PES: Len=%d", PES_Assembler.getNumPacketBytes());
                     break;
                 default:
                     break;
-            }*/
+            }
 
             printf("\n");
         }
