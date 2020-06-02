@@ -124,7 +124,7 @@ public:
     void Reset();
     int32_t Parse(const uint8_t* Input, uint8_t AdaptationFieldControl);
     void Print() const;
-    uint32_t getNumBytes(size_t index) const;
+    uint32_t getNumBytes() const;
 
     const uint8_t &get_adaptationFieldLength() const;
     const bool &get_discontinuityIndicator() const;

@@ -256,8 +256,8 @@ void xTS_AdaptationField::Print() const {
             get_adaptationFieldExtensionFlag());
 }
 
-uint32_t xTS_AdaptationField::getNumBytes(size_t index) const {
-    return get_adaptationFieldLength() - index/8;
+uint32_t xTS_AdaptationField::getNumBytes() const {
+    return get_adaptationFieldLength();
 }
 
 //GETTERS
@@ -534,30 +534,34 @@ void xPES_Assembler::xBufferAppend(const uint8_t *Data, int32_t Size) {
         m_Buffer = m_TempBuffer;
     }
 
-    for(uint8_t i = 188 - Size; i<188; i++){
+    for(uint8_t i = Size; i < xTS::TS_PacketLength; i++){
         m_Buffer[m_DataOffset++] = Data[i];
     }
 }
 
-xPES_Assembler::eResult xPES_Assembler::AbsorbPacket(const uint8_t *TransportStreamPacket, const xTS_PacketHeader *PacketHeader, const xTS_AdaptationField *AdaptationField) {
-    if(PacketHeader->get_packetIdentifier() == m_PID){
+/*xPES_Assembler::eResult xPES_Assembler::AbsorbPacket(const uint8_t *TransportStreamPacket, const xTS_PacketHeader *PacketHeader, const xTS_AdaptationField *AdaptationField) {
+    if (PacketHeader->get_packetIdentifier() == m_PID) {
         uint8_t cc = PacketHeader->get_continuityCounter();
 
-        if(PacketHeader->get_payloadUnitStartIndicator() == 1){
+        uint32_t PayloadSize = xTS::TS_PacketLength - xTS::TS_HeaderLength;
+        if (PacketHeader->hasAdaptationField()) {
+            PayloadSize -= (AdaptationField->getNumBytes() + 1);
+        }
+
+        if (PacketHeader->get_payloadUnitStartIndicator() == 1) {
             xBufferReset();
             m_PESH.Reset();
             m_Started = true;
             m_LastContinuityCounter = cc;
-            m_EndContinuityCounter = (cc+15) % 16;
-            if(PacketHeader->hasPayload()){
+            m_EndContinuityCounter = (cc + 15) % 16;
+            if (PacketHeader->hasPayload()) {
                 xBufferAppend(TransportStreamPacket,
-                        xTS::TS_HeaderLength + AdaptationField->get_adaptationFieldLength() + 1);
+                              xTS::TS_HeaderLength + AdaptationField->get_adaptationFieldLength() + 1);
             }
 
             return xPES_Assembler::eResult::AssemblingStarted;
-        }
-        else if(cc == m_EndContinuityCounter){
-            if(PacketHeader->hasPayload()){
+        } else if (cc == m_EndContinuityCounter) {
+            if (PacketHeader->hasPayload()) {
                 xBufferAppend(TransportStreamPacket,
                               xTS::TS_HeaderLength + AdaptationField->get_adaptationFieldLength() + 1);
             }
@@ -566,12 +570,11 @@ xPES_Assembler::eResult xPES_Assembler::AbsorbPacket(const uint8_t *TransportStr
             m_DataOffset = m_PESH.getPacketLength() + xTS::PES_HeaderLength;
 
             return xPES_Assembler::eResult::AssemblingFinished;
-        }
-        else if(cc >= 0 && cc <= 15 && cc == (m_LastContinuityCounter + 1) % 16 && m_Started){
+        } else if (cc >= 0 && cc <= 15 && cc == (m_LastContinuityCounter + 1) % 16 && m_Started) {
             m_LastContinuityCounter++;
-            if(PacketHeader->hasPayload()){
+            if (PacketHeader->hasPayload()) {
                 xBufferAppend(TransportStreamPacket,
-                        xTS::TS_HeaderLength + AdaptationField->get_adaptationFieldLength() + 1);
+                              xTS::TS_HeaderLength + AdaptationField->get_adaptationFieldLength() + 1);
             }
 
             return xPES_Assembler::eResult::AssemblingContinue;
@@ -579,8 +582,54 @@ xPES_Assembler::eResult xPES_Assembler::AbsorbPacket(const uint8_t *TransportStr
             xBufferReset();
             return xPES_Assembler::eResult::StreamPacketLost;
         }
-    }
-    else{
+    } else {
         return xPES_Assembler::eResult::UnexpectedPID;
     }
+}
+*/
+xPES_Assembler::eResult xPES_Assembler::AbsorbPacket(const uint8_t *TransportStreamPacket, const xTS_PacketHeader *PacketHeader, const xTS_AdaptationField *AdaptationField) {
+    if(PacketHeader->get_packetIdentifier() != m_PID){
+        return xPES_Assembler::eResult::UnexpectedPID;
+    }
+
+    uint32_t PayloadSize = xTS::TS_PacketLength - xTS::TS_HeaderLength;
+
+    if(PacketHeader->hasAdaptationField()){
+        PayloadSize -= (AdaptationField->getNumBytes() + 1);
+    }
+
+    if(PacketHeader->get_payloadUnitStartIndicator() == 1 && AdaptationField->get_randomAccessIndicator()){
+        xBufferReset();
+
+        m_PESH.Reset();
+        m_PESH.Parse(&TransportStreamPacket[5 + AdaptationField->getNumBytes()]);
+
+        if(m_PESH.getPacketStartCodePrefix() != 1){
+            return xPES_Assembler::eResult::StreamPacketLost;
+        }
+
+        if(m_PESH.getPacketStartCodePrefix() == 1){
+            m_Started = true;
+            m_BufferSize = m_PESH.getPacketLength() + xTS::PES_HeaderLength - m_PESH.get_PESHeaderDataLength();
+            m_Buffer = new uint8_t[m_BufferSize];
+
+            PayloadSize -= m_PESH.get_PESHeaderDataLength();
+            xBufferAppend(TransportStreamPacket, PayloadSize);
+            return xPES_Assembler::eResult::AssemblingStarted;
+        }
+        else return xPES_Assembler::eResult::StreamPacketLost;
+    }
+
+    else if(m_Started && m_DataOffset + PayloadSize == m_PESH.getPacketLength() + xTS::TS_HeaderLength - m_PESH.get_PESHeaderDataLength()){
+        xBufferAppend(TransportStreamPacket, PayloadSize);
+        m_Started = false;
+        return xPES_Assembler::eResult::AssemblingFinished;
+    }
+
+    else if(m_Started){
+        xBufferAppend(TransportStreamPacket, PayloadSize);
+        m_LastContinuityCounter++;
+        return xPES_Assembler::eResult::AssemblingContinue;
+    }
+    return xPES_Assembler::eResult::StreamPacketLost;
 }
