@@ -1,6 +1,7 @@
 #include "tsCommon.h"
 #include "tsTransportStream.h"
 #include <iostream>
+#include <cstdio>
 
 using namespace std;
 
@@ -10,6 +11,8 @@ int main( int argc, char *argv[ ], char *envp[ ]) {
         printf("Nullptr! \n");
         return EXIT_FAILURE;
     }
+
+    FILE *outputfile = fopen("D:\\Dokumenty\\Polibuda\\3 rok\\PDM\\TS_Parser\\PID136.mp2", "wb");
 
     xTS_PacketHeader TS_PacketHeader;
     int32_t TS_PacketId = 0;
@@ -60,6 +63,7 @@ int main( int argc, char *argv[ ], char *envp[ ]) {
                 case xPES_Assembler::eResult::AssemblingFinished:
                     printf(" Finished ");
                     printf(" PES: Len=%d", PES_Assembler.getNumPacketBytes());
+                    fwrite(PES_Assembler.getPacket(), PES_Assembler.getNumPacketBytes(), 1, outputfile);
                     break;
                 default:
                     break;
@@ -72,4 +76,5 @@ int main( int argc, char *argv[ ], char *envp[ ]) {
 
     fclose(file);
     free(buffer);
+    fclose(outputfile);
 }
