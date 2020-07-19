@@ -168,6 +168,7 @@ protected:
     uint32_t m_PacketStartCodePrefix;
     uint8_t m_StreamId;
     uint16_t m_PacketLength;
+    uint32_t m_DataLength;
     uint8_t PESScramblingControl;
     bool PESPriority;
     bool dataAlignmentIndicator;
@@ -190,6 +191,7 @@ public:
     uint32_t getPacketStartCodePrefix() const { return m_PacketStartCodePrefix; }
     uint8_t getStreamId() const { return m_StreamId; }
     uint16_t getPacketLength() const { return m_PacketLength; }
+    uint32_t getDataLength() const { return m_DataLength; }
 
     const uint8_t &get_PESScramblingControl() const;
     const bool &get_PESPriority() const;

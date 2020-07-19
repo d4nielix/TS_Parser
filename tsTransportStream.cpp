@@ -322,6 +322,7 @@ void xTS_AdaptationField::set_adaptationFieldExtensionFlag(const bool &temp) {
 // xPES_PacketHeader
 //=============================================================================================================================================================================
 void xPES_PacketHeader::Reset() {
+    m_DataLength = 0;
     set_PacketStartCodePrefix(0);
     set_StreamId(0);
     set_PacketLength(0);
@@ -382,6 +383,8 @@ int32_t xPES_PacketHeader::Parse(const uint8_t *Input) {
 
         set_PESHeaderDataLength(Input[8]);
     }
+    set_PESHeaderDataLength(get_PESHeaderDataLength() + 9);
+    m_DataLength = getPacketLength() - get_PESHeaderDataLength();
 
     return 1;
 }
@@ -515,26 +518,10 @@ void xPES_Assembler::xBufferReset() {
     m_PESH.Reset();
 }
 
-void xPES_Assembler::xBufferAppend(const uint8_t *Data, int32_t Size) {
-    /*for(int i=Size; i<xTS::TS_PacketLength; i++){
-        m_Buffer += Data[i];
-    }*/
-
-    m_BufferSize += Size;
-
-    if(!m_Started){
-        m_Buffer = new uint8_t[m_BufferSize];
-    }
-    else{
-        uint8_t* m_TempBuffer = new uint8_t[m_BufferSize];
-        for(uint32_t i=0; i < m_BufferSize - Size; i++){
-            m_TempBuffer[i] = m_Buffer[i];
-        }
-        delete[] m_Buffer;
-        m_Buffer = m_TempBuffer;
-    }
-
-    for(uint8_t i = Size; i < xTS::TS_PacketLength; i++){
+void xPES_Assembler::xBufferAppend(const uint8_t * Data, int32_t Size)
+{
+    for (uint8_t i = 188 - Size; i < 188; i++)
+    {
         m_Buffer[m_DataOffset++] = Data[i];
     }
 }
@@ -619,14 +606,18 @@ xPES_Assembler::eResult xPES_Assembler::AbsorbPacket(const uint8_t *TransportStr
         }
         else return xPES_Assembler::eResult::StreamPacketLost;
     }
+    //if (m_Started)cout << "\nm_Started=1"; else cout << "\nm_Started=0";
 
-    else if(m_Started && m_DataOffset + PayloadSize == m_PESH.getPacketLength() + xTS::TS_HeaderLength - m_PESH.get_PESHeaderDataLength()){
+    //cout << "\nm_DataOffset + PayloadSize=" << m_DataOffset + PayloadSize;
+    //cout << "\n m_PESH.getPacketLength() + xTS::TS_HeaderLength - m_PESH.get_PESHeaderDataLength()=" << m_PESH.getPacketLength() + xTS::TS_HeaderLength - m_PESH.get_PESHeaderDataLength();
+
+    if (m_Started && m_DataOffset + PayloadSize == m_PESH.getPacketLength() + xTS::PES_HeaderLength - m_PESH.get_PESHeaderDataLength()) {
         xBufferAppend(TransportStreamPacket, PayloadSize);
         m_Started = false;
         return xPES_Assembler::eResult::AssemblingFinished;
     }
 
-    else if(m_Started){
+    else if (m_Started) {
         xBufferAppend(TransportStreamPacket, PayloadSize);
         m_LastContinuityCounter++;
         return xPES_Assembler::eResult::AssemblingContinue;
